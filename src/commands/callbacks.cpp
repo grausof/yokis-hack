@@ -80,8 +80,8 @@ void registerAllCallbacks() {
     #if WIFI_ENABLED
     g_serial->registerCallback(
         new GenericCallback("wifiConfig",
-                            "Configure wifi: wifiConfig \"ssid\" \"psk\" "
-                            "(quotes support spaces)",
+                            "Configure wifi: wifiConfig \"ssid\" [\"psk\"] "
+                            "(quote values containing spaces)",
                             wifiConfig));
     g_serial->registerCallback(
         new GenericCallback("wifiReconnect",
@@ -495,6 +495,8 @@ bool resetWifiConfigCallback(const char* params) {
     return resetWifiConfig();
 }
 
+// No escape mechanism is provided: a `"` can only appear in an unquoted
+// value, so a quoted value cannot itself contain a `"`.
 static bool getWifiConfigArgument(const char*& cursor, String& argument) {
     while (*cursor == ' ' || *cursor == '\t') cursor++;
     if (*cursor == '\0') return false;
@@ -505,7 +507,10 @@ static bool getWifiConfigArgument(const char*& cursor, String& argument) {
         while (*cursor != '\0' && *cursor != '"') {
             argument += *cursor++;
         }
-        if (*cursor != '"') return false;
+        if (*cursor != '"') {
+            argument = "";  // don't leak a partial value to the caller
+            return false;
+        }
         cursor++;
         return *cursor == '\0' || *cursor == ' ' || *cursor == '\t';
     }
@@ -524,10 +529,19 @@ bool wifiConfig(const char* params) {
     String extra;
 
     if (!getWifiConfigArgument(cursor, command) ||
-        !getWifiConfigArgument(cursor, ssid) ||
-        !getWifiConfigArgument(cursor, psk) ||
-        getWifiConfigArgument(cursor, extra)) {
-        LOG.println("Usage: wifiConfig \"ssid\" \"psk\"");
+        !getWifiConfigArgument(cursor, ssid)) {
+        LOG.println("Usage: wifiConfig \"ssid\" [\"psk\"]");
+        return false;
+    }
+
+    // psk is optional (open networks). Peek first: "not given" and a parse
+    // error (unterminated quote) both return false and must not be conflated.
+    // A fourth argument succeeding is an error, hence the inverted last test.
+    const char* peek = cursor;
+    while (*peek == ' ' || *peek == '\t') peek++;
+    if (*peek != '\0' && (!getWifiConfigArgument(cursor, psk) ||
+                           getWifiConfigArgument(cursor, extra))) {
+        LOG.println("Usage: wifiConfig \"ssid\" [\"psk\"]");
         return false;
     }
 
