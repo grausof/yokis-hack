@@ -195,7 +195,7 @@ From serial, one can use the following commands:
 | `reload`           |                          | Reload config from LittleFS to memory                                                               |
 | `dConfigFS`        |                          | display config previously stored in LittleFS                                                        |
 | `dRestore`         | `config_line`            | restore a previously saved raw config line                                                          |
-| `wifiConfig`       | `ssid password`          | Configure wifi with parameters: ssid psk (does not work for psk containing spaces)                  |
+| `wifiConfig`       | `"ssid" "password"`      | Configure Wi-Fi; quote SSID and password when they contain spaces                                   |
 | `wifiDiag`         |                          | Display wifi configuration debug info                                                               |
 | `wifiReset`        |                          | Reset wifi configuration and setup AP mode                                                          |
 | `restart`          |                          | Restart the ESP board board                                                                           |
