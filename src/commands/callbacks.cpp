@@ -455,6 +455,10 @@ bool reloadConfig(const char*) {
     }
     g_nb_devices = Device::loadFromLittleFS(g_devices, MAX_YOKIS_DEVICES_NUM);
 
+#if MQTT_ENABLED
+    if (g_mqtt != NULL) g_mqtt->setDiscoveryDone(false);
+#endif
+
     // Reattach tickers to devices
     for (uint8_t i = 0; i < g_nb_devices; i++) {
         if (g_devices[i] != NULL) {

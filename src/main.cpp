@@ -241,14 +241,18 @@ void pollForStatus(Device* d) {
             g_mqtt->notifyOnline(d);
         }
 
-        // Update device status - even if unchanged
-        // Hence, in case of hass restart, status are updated
-        d->setStatus(ds);
         if (d->getMode() == DIMMER) {
+            d->setStatus(ds);
             if (ds == ON && d->getBrightness() == 0)
                 d->setBrightness(BRIGHTNESS_MAX);
             g_mqtt->notifyBrightness(d);
+        } else if (d->getMode() == SHUTTER ||
+                   d->getMode() == SHUTTER_BUS) {
+            // A resting shutter's RF response does not reliably indicate
+            // whether it is open or closed. Keep the last commanded state.
+            g_mqtt->notifyCover(d);
         } else {
+            d->setStatus(ds);
             g_mqtt->notifyPower(d);
         }
     } else {
@@ -328,9 +332,18 @@ void mqttCallback(char* topic, uint8_t* payload, unsigned int length) {
     IrqManager::irqType = E2BP;
     g_bp->setDevice(d);
     switch (d->getMode()) {
-        case ON_OFF:
         case SHUTTER:
         case SHUTTER_BUS:
+            if (strcmp(mPayload, "OPEN") == 0) {
+                g_bp->on();
+            } else if (strcmp(mPayload, "CLOSE") == 0) {
+                g_bp->off();
+            } else if (strcmp(mPayload, "STOP") == 0) {
+                g_bp->pauseShutter();
+            }
+            g_mqtt->notifyCover(d);
+            break;
+        case ON_OFF:
         case NO_RCPT:
             if (strcmp(mPayload, "ON") == 0) {
                 g_bp->on();

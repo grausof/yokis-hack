@@ -61,6 +61,35 @@ char* MqttHass::newMessageJson(const Device* device, char* buf) {
                 "}",
                 device->getName(), device->getName(),
                 device->getName(), device->getName());
+        } else if (device->getMode() == SHUTTER ||
+                             device->getMode() == SHUTTER_BUS) {
+                sprintf(buf,
+                                "{"
+                                "\"name\":\"Shutter\","
+                                "\"device_class\":\"shutter\","
+                                "\"cmd_t\":\"~cmnd/COVER\","
+                                "\"pl_open\":\"OPEN\","
+                                "\"pl_cls\":\"CLOSE\","
+                                "\"pl_stop\":\"STOP\","
+                                "\"state_topic\":\"~tele/STATE\","
+                                "\"state_open\":\"open\","
+                                "\"state_closed\":\"closed\","
+                                "\"state_stopped\":\"stopped\","
+                                "\"val_tpl\":\"{{value_json.STATE}}\","
+                                "\"avty_t\":\"~tele/LWT\","
+                                "\"pl_avail\":\"Online\","
+                                "\"pl_not_avail\":\"Offline\","
+                                "\"uniq_id\":\"esp-%s\","
+                                "\"device\":{"
+                                    "\"name\":\"%s\","
+                                    "\"identifiers\":[\"yokis-%s\"],"
+                                    "\"model\":\"MVR500ERX\","
+                                    "\"mf\":\"Yokis\""
+                                "},"
+                                "\"~\":\"%s/\""
+                                "}",
+                                device->getName(), device->getName(),
+                                device->getName(), device->getName());
     } else {
         sprintf(buf,
                 "{"
@@ -92,8 +121,30 @@ char* MqttHass::newMessageJson(const Device* device, char* buf) {
 }
 
 char* MqttHass::newPublishTopic(const Device* device, char* buf) {
-    sprintf(buf, "%s/light/%s/config", HASS_PREFIX, device->getName());
+    const char* component =
+        (device->getMode() == SHUTTER || device->getMode() == SHUTTER_BUS)
+            ? "cover"
+            : "light";
+    sprintf(buf, "%s/%s/%s/config", HASS_PREFIX, component,
+            device->getName());
     return buf;
+}
+
+void MqttHass::cleanupOldDiscovery(const Device* device) {
+    char topic[128];
+    const char* components[] = {"light", "switch", "cover"};
+    const char* currentComponent =
+        (device->getMode() == SHUTTER || device->getMode() == SHUTTER_BUS)
+            ? "cover"
+            : "light";
+
+    for (uint8_t i = 0; i < 3; i++) {
+        if (strcmp(components[i], currentComponent) != 0) {
+            sprintf(topic, "%s/%s/%s/config", HASS_PREFIX, components[i],
+                    device->getName());
+            this->publish(topic, "", true);
+        }
+    }
 }
 
 // Publish device to MQTT for HASS discovery
@@ -102,6 +153,7 @@ bool MqttHass::publishDevice(const Device* device) {
     char topic[128];
     char payload[MQTT_MAX_PACKET_SIZE];
 
+    cleanupOldDiscovery(device);
     newPublishTopic(device, topic);
     newMessageJson(device, payload);
 
@@ -150,6 +202,29 @@ void MqttHass::notifyPower(const Device* device, DeviceStatus ds) {
     publish(buf, bufPayload, false);
 }
 
+void MqttHass::notifyCover(const Device* device) {
+    const char* state;
+    switch (device->getStatus()) {
+        case ON:
+            state = "open";
+            break;
+        case OFF:
+            state = "closed";
+            break;
+        case PAUSE_SHUTTER:
+            state = "stopped";
+            break;
+        default:
+            return;
+    }
+
+    char topic[64];
+    char payload[64];
+    sprintf(topic, "%s/tele/STATE", device->getName());
+    sprintf(payload, "{\"STATE\":\"%s\"}", state);
+    publish(topic, payload, false);
+}
+
 void MqttHass::notifyBrightness(const Device* device) {
     char buf[64];
     char bufPayload[64];
@@ -165,7 +240,10 @@ void MqttHass::notifyBrightness(const Device* device) {
 void MqttHass::subscribeDevice(const Device* device) {
     char buf[64];
 
-    if (device->getMode() == ON_OFF || device->getMode() == NO_RCPT) {
+    if (device->getMode() == SHUTTER || device->getMode() == SHUTTER_BUS) {
+        sprintf(buf, "%s/cmnd/COVER", device->getName());
+        this->subscribe(buf);
+    } else if (device->getMode() == ON_OFF || device->getMode() == NO_RCPT) {
         sprintf(buf, "%s/cmnd/POWER", device->getName());
         this->subscribe(buf);
     } else if (device->getMode() == DIMMER) {
