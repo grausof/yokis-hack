@@ -2,7 +2,8 @@
 
 #include "globals.h"
 
-void registerAllCallbacks() {
+void registerAllCallbacks()
+{
     // Serial setup
     g_serial->registerCallback(new GenericCallback(
         "pair",
@@ -77,7 +78,7 @@ void registerAllCallbacks() {
         "dRestore",
         "restore a previously saved raw config line (SPIFFS->LittleFS)",
         restoreConfig));
-    #if WIFI_ENABLED
+#if WIFI_ENABLED
     g_serial->registerCallback(
         new GenericCallback("wifiConfig",
                             "Configure wifi: wifiConfig \"ssid\" \"psk\" "
@@ -93,19 +94,19 @@ void registerAllCallbacks() {
         "wifiReset", "Reset wifi configuration and setup AP mode",
         resetWifiConfigCallback));
 
-    #if MQTT_ENABLED
-        g_serial->registerCallback(
-            new GenericCallback("mqttConfig",
-                                "Configure MQTT options (format: mqttConfig host "
-                                "port username password)",
-                                mqttConfig));
-        g_serial->registerCallback(new GenericCallback(
-            "mqttDiag", "Display current MQTT configuration", mqttDiag));
-        g_serial->registerCallback(new GenericCallback(
-            "mqttConfigDelete", "Delete current MQTT configuration",
-            mqttConfigDelete));
-    #endif // MQTT_ENABLED
-    #endif // WIFI_ENABLED
+#if MQTT_ENABLED
+    g_serial->registerCallback(
+        new GenericCallback("mqttConfig",
+                            "Configure MQTT options (format: mqttConfig host "
+                            "port username password)",
+                            mqttConfig));
+    g_serial->registerCallback(new GenericCallback(
+        "mqttDiag", "Display current MQTT configuration", mqttDiag));
+    g_serial->registerCallback(new GenericCallback(
+        "mqttConfigDelete", "Delete current MQTT configuration",
+        mqttConfigDelete));
+#endif // MQTT_ENABLED
+#endif // WIFI_ENABLED
 
     g_serial->registerCallback(
         new GenericCallback("restart", "Restart the ESP board", restart));
@@ -115,11 +116,13 @@ void registerAllCallbacks() {
 #endif // ESP8266 || ESP32
 }
 
-bool pairingCallback(const char*) {
-    uint8_t buf[5];  // enough size for addr, serial and version
+bool pairingCallback(const char *)
+{
+    uint8_t buf[5]; // enough size for addr, serial and version
     IrqManager::irqType = PAIRING;
     bool res = g_pairingRF->hackPairing();
-    if (res) {
+    if (res)
+    {
         g_pairingRF->getAddressFromRecvData(buf);
         g_currentDevice->setHardwareAddress(buf);
         g_currentDevice->setChannel(g_pairingRF->getChannelFromRecvData());
@@ -140,24 +143,29 @@ bool pairingCallback(const char*) {
 }
 
 // Get a device from the list with the given params
-Device* getDeviceFromParams(const char* params) {
+Device *getDeviceFromParams(const char *params)
+{
 #if defined(ESP8266) || defined(ESP32)
-    if (params == NULL || strcmp("", params) == 0) return g_currentDevice;
+    if (params == NULL || strcmp("", params) == 0)
+        return g_currentDevice;
 
-    char* paramsBak;
-    char* pch;
-    Device* d;
+    char *paramsBak;
+    char *pch;
+    Device *d;
 
     int len = strlen(params);
     paramsBak = new char[len + 1];
     strncpy(paramsBak, params, len);
     paramsBak[len] = 0;
-    strtok(paramsBak, " ");   // ignore the command name
-    pch = strtok(NULL, " ");  // get the name of the device
+    strtok(paramsBak, " ");  // ignore the command name
+    pch = strtok(NULL, " "); // get the name of the device
 
-    if (pch == NULL || strcmp("", pch) == 0) {
+    if (pch == NULL || strcmp("", pch) == 0)
+    {
         d = g_currentDevice;
-    } else {
+    }
+    else
+    {
         d = Device::getFromList(g_devices, g_nb_devices, pch);
     }
 
@@ -169,10 +177,12 @@ Device* getDeviceFromParams(const char* params) {
 }
 
 // Generic on, off or toggle
-bool changeDeviceState(const char* params, bool (E2bp::*func)(void)) {
-    Device* d = getDeviceFromParams(params);
+bool changeDeviceState(const char *params, bool (E2bp::*func)(void))
+{
+    Device *d = getDeviceFromParams(params);
 
-    if (d == NULL || d->getHardwareAddress() == NULL) {
+    if (d == NULL || d->getHardwareAddress() == NULL)
+    {
         LOG.println("No such device");
         return false;
     }
@@ -181,10 +191,14 @@ bool changeDeviceState(const char* params, bool (E2bp::*func)(void)) {
     g_bp->setDevice(d);
     bool ret = (g_bp->*func)();
 #if (defined(ESP8266) || defined(ESP32)) && MQTT_ENABLED
-    if (ret) {
-        if (d->getMode() == DIMMER) {
+    if (ret)
+    {
+        if (d->getMode() == DIMMER)
+        {
             g_mqtt->notifyBrightness(d);
-        } else {
+        }
+        else
+        {
             g_mqtt->notifyPower(d);
         }
     }
@@ -192,31 +206,38 @@ bool changeDeviceState(const char* params, bool (E2bp::*func)(void)) {
     return ret;
 }
 
-bool toggleCallback(const char* params) {
+bool toggleCallback(const char *params)
+{
     return changeDeviceState(params, &E2bp::toggle);
 }
 
-bool onCallback(const char* params) {
+bool onCallback(const char *params)
+{
     return changeDeviceState(params, &E2bp::on);
 }
 
-bool offCallback(const char* params) {
+bool offCallback(const char *params)
+{
     return changeDeviceState(params, &E2bp::off);
 }
 
-bool pauseShutterCallback(const char* params) {
+bool pauseShutterCallback(const char *params)
+{
     return changeDeviceState(params, &E2bp::pauseShutter);
 }
 
-bool scannerCallback(const char* params) {
-    if (FLAG_IS_ENABLED(FLAG_POLLING)) {
+bool scannerCallback(const char *params)
+{
+    if (FLAG_IS_ENABLED(FLAG_POLLING))
+    {
         LOG.println("Disable polling before attempting to scan ! Aborting.");
         return false;
     }
 
-    Device* d = getDeviceFromParams(params);
+    Device *d = getDeviceFromParams(params);
 
-    if (d == NULL || d->getHardwareAddress() == NULL) {
+    if (d == NULL || d->getHardwareAddress() == NULL)
+    {
         LOG.println("No such device");
         return false;
     }
@@ -228,10 +249,12 @@ bool scannerCallback(const char* params) {
     return true;
 }
 
-bool copyCallback(const char* params) {
-    Device* d = getDeviceFromParams(params);
+bool copyCallback(const char *params)
+{
+    Device *d = getDeviceFromParams(params);
 
-    if (d == NULL || d->getHardwareAddress() == NULL) {
+    if (d == NULL || d->getHardwareAddress() == NULL)
+    {
         LOG.println("No such device");
         return false;
     }
@@ -241,10 +264,12 @@ bool copyCallback(const char* params) {
     return g_copy->send();
 }
 
-bool displayDevices(const char*) {
+bool displayDevices(const char *)
+{
 #if defined(ESP8266) || defined(ESP32)
     uint8_t c = 0;
-    while (g_devices[c] != NULL) {
+    while (g_devices[c] != NULL)
+    {
         LOG.println("=== Device ===");
         g_devices[c]->toSerial();
         LOG.println("==============");
@@ -257,41 +282,50 @@ bool displayDevices(const char*) {
     return true;
 }
 
-bool dimmerEffectNoneCallback(const char* params) {
+bool dimmerEffectNoneCallback(const char *params)
+{
     int ret = changeDeviceState(params, &E2bp::dimmerEffectNone);
     return ret != -1;
 }
 
-bool dimmerEffectBreathCallback(const char* params) {
+bool dimmerEffectBreathCallback(const char *params)
+{
     int ret = changeDeviceState(params, &E2bp::dimmerEffectBreath);
     return ret != -1;
 }
 
-bool dimmerMemCallback(const char* params) {
+bool dimmerMemCallback(const char *params)
+{
     int ret = changeDeviceState(params, &E2bp::dimmerMem);
     return ret != -1;
 }
-bool dimmerMaxCallback(const char* params) {
+bool dimmerMaxCallback(const char *params)
+{
     int ret = changeDeviceState(params, &E2bp::dimmerMax);
     return ret != -1;
 }
-bool dimmerMidCallback(const char* params) {
+bool dimmerMidCallback(const char *params)
+{
     int ret = changeDeviceState(params, &E2bp::dimmerMid);
     return ret != -1;
 }
-bool dimmerMinCallback(const char* params) {
+bool dimmerMinCallback(const char *params)
+{
     int ret = changeDeviceState(params, &E2bp::dimmerMin);
     return ret != -1;
 }
-bool dimmerNilCallback(const char* params) {
+bool dimmerNilCallback(const char *params)
+{
     int ret = changeDeviceState(params, &E2bp::dimmerNiL);
     return ret != -1;
 }
 
-bool pressCallback(const char* params) {
-    Device* d = getDeviceFromParams(params);
+bool pressCallback(const char *params)
+{
+    Device *d = getDeviceFromParams(params);
 
-    if (d == NULL || d->getHardwareAddress() == NULL) {
+    if (d == NULL || d->getHardwareAddress() == NULL)
+    {
         LOG.println("No such device");
         return false;
     }
@@ -304,22 +338,24 @@ bool pressCallback(const char* params) {
     return ret;
 }
 
-bool pressForCallback(const char* params) {
-    Device* d = getDeviceFromParams(params);
+bool pressForCallback(const char *params)
+{
+    Device *d = getDeviceFromParams(params);
 
-    if (d == NULL || d->getHardwareAddress() == NULL) {
+    if (d == NULL || d->getHardwareAddress() == NULL)
+    {
         LOG.println("No such device");
         return false;
     }
 
-    char* tok;
+    char *tok;
     size_t paramsLen = strlen(params);
-    char* paramsBak = new char[paramsLen + 1];
+    char *paramsBak = new char[paramsLen + 1];
     strncpy(paramsBak, params, paramsLen);
     paramsBak[paramsLen] = 0;
-    strtok(paramsBak, " ");   // command
-    strtok(NULL, " ");        // device name
-    tok = strtok(NULL, " ");  // duration
+    strtok(paramsBak, " ");  // command
+    strtok(NULL, " ");       // device name
+    tok = strtok(NULL, " "); // duration
     unsigned long durationMs = strtoul(tok, NULL, 10);
     delete[] paramsBak;
 
@@ -328,10 +364,12 @@ bool pressForCallback(const char* params) {
     return g_bp->pressAndHoldFor(durationMs);
 }
 
-bool releaseCallback(const char* params) {
-    Device* d = getDeviceFromParams(params);
+bool releaseCallback(const char *params)
+{
+    Device *d = getDeviceFromParams(params);
 
-    if (d == NULL || d->getHardwareAddress() == NULL) {
+    if (d == NULL || d->getHardwareAddress() == NULL)
+    {
         LOG.println("No such device");
         return false;
     }
@@ -344,10 +382,12 @@ bool releaseCallback(const char* params) {
     return ret;
 }
 
-bool statusCallback(const char* params) {
-    Device* d = getDeviceFromParams(params);
+bool statusCallback(const char *params)
+{
+    Device *d = getDeviceFromParams(params);
 
-    if (d == NULL || d->getHardwareAddress() == NULL) {
+    if (d == NULL || d->getHardwareAddress() == NULL)
+    {
         LOG.println("No such device");
         return false;
     }
@@ -362,12 +402,15 @@ bool statusCallback(const char* params) {
     return true;
 }
 
-bool statusAllCallback(const char* params) {
-    Device* d;
+bool statusAllCallback(const char *params)
+{
+    Device *d;
     IrqManager::irqType = E2BP;
-    for (uint8_t i = 0; i < g_nb_devices; i++) {
+    for (uint8_t i = 0; i < g_nb_devices; i++)
+    {
         d = g_devices[i];
-        if (d != NULL) {
+        if (d != NULL)
+        {
             g_bp->setDevice(d);
             DeviceStatus st = g_bp->pollForStatus();
             LOG.print(d->getName());
@@ -377,37 +420,42 @@ bool statusAllCallback(const char* params) {
         }
     }
 
-    if (g_nb_devices > 0) LOG.flush();
+    if (g_nb_devices > 0)
+        LOG.flush();
 
     return true;
 }
 
 #if defined(ESP8266) || defined(ESP32)
-bool storeConfigCallback(const char* params) {
-    char* paramsBak;
-    char* pch;
+bool storeConfigCallback(const char *params)
+{
+    char *paramsBak;
+    char *pch;
     bool ret;
 
     int len = strlen(params);
     paramsBak = new char[len + 1];
     strncpy(paramsBak, params, len);
     paramsBak[len] = 0;
-    strtok(paramsBak, " ");   // ignore the command name
-    pch = strtok(NULL, " ");  // get the name of the device
-    if(pch == NULL || strlen(pch) == 0) {
+    strtok(paramsBak, " ");  // ignore the command name
+    pch = strtok(NULL, " "); // get the name of the device
+    if (pch == NULL || strlen(pch) == 0)
+    {
         LOG.println("Cannot save. Please specify a name for this device!");
         return false;
     }
     g_currentDevice->setName(pch);
 
     // This should be auto detected from pairing
-    pch = strtok(NULL, " ");  // Get the device mode
-    if (pch != NULL) {
+    pch = strtok(NULL, " "); // Get the device mode
+    if (pch != NULL)
+    {
         g_currentDevice->setMode(pch);
     }
 
     ret = g_currentDevice->saveToLittleFS();
-    if (ret) LOG.println("Saved.");
+    if (ret)
+        LOG.println("Saved.");
 
     // reset default name
     g_currentDevice->setName(CURRENT_DEVICE_DEFAULT_NAME);
@@ -418,26 +466,29 @@ bool storeConfigCallback(const char* params) {
     return ret;
 }
 
-bool clearConfig(const char*) {
+bool clearConfig(const char *)
+{
     Device::clearConfigFromLittleFS();
     return true;
 }
 
-bool displayConfig(const char*) {
+bool displayConfig(const char *)
+{
     Device::displayConfigFromLittleFS();
     return true;
 }
 
-bool restoreConfig(const char* params) {
-    char* paramsBak;
-    char* pch;
+bool restoreConfig(const char *params)
+{
+    char *paramsBak;
+    char *pch;
 
     int len = strlen(params);
     paramsBak = new char[len + 1];
     strncpy(paramsBak, params, len);
     paramsBak[len] = 0;
-    strtok(paramsBak, " ");   // ignore the command
-    pch = strtok(NULL, " ");  // Get the line to restore
+    strtok(paramsBak, " ");  // ignore the command
+    pch = strtok(NULL, " "); // Get the line to restore
 
     bool ret = Device::storeRawConfig(pch);
 
@@ -445,10 +496,13 @@ bool restoreConfig(const char* params) {
     return ret;
 }
 
-bool reloadConfig(const char*) {
-    for (uint8_t i = 0; i < MAX_YOKIS_DEVICES_NUM; i++) {
-        delete g_devices[i];  // delete previously allocated device if needed
-        if (g_deviceStatusPollers[i] != NULL) g_deviceStatusPollers[i]->detach();
+bool reloadConfig(const char *)
+{
+    for (uint8_t i = 0; i < MAX_YOKIS_DEVICES_NUM; i++)
+    {
+        delete g_devices[i]; // delete previously allocated device if needed
+        if (g_deviceStatusPollers[i] != NULL)
+            g_deviceStatusPollers[i]->detach();
         delete g_deviceStatusPollers[i];
         g_devices[i] = NULL;
         g_deviceStatusPollers[i] = NULL;
@@ -456,31 +510,35 @@ bool reloadConfig(const char*) {
     g_nb_devices = Device::loadFromLittleFS(g_devices, MAX_YOKIS_DEVICES_NUM);
 
 #if MQTT_ENABLED
-    if (g_mqtt != NULL) g_mqtt->setDiscoveryDone(false);
+    if (g_mqtt != NULL)
+        g_mqtt->setDiscoveryDone(false);
 #endif
 
     // Reattach tickers to devices
-    for (uint8_t i = 0; i < g_nb_devices; i++) {
-        if (g_devices[i] != NULL) {
+    for (uint8_t i = 0; i < g_nb_devices; i++)
+    {
+        if (g_devices[i] != NULL)
+        {
             g_deviceStatusPollers[i] = new Ticker();
             g_deviceStatusPollers[i]->attach_ms(random(4000, 10000), pollDevice,
-                                              g_devices[i]);
+                                                g_devices[i]);
         }
     }
     LOG.println("Reloaded.");
     return true;
 }
 
-bool deleteFromConfig(const char* params) {
-    char* paramsBak;
-    char* pch;
+bool deleteFromConfig(const char *params)
+{
+    char *paramsBak;
+    char *pch;
 
     int len = strlen(params);
     paramsBak = new char[len + 1];
     strncpy(paramsBak, params, len);
     paramsBak[len] = 0;
-    strtok(paramsBak, " ");   // ignore the command
-    pch = strtok(NULL, " ");  // Get the name to delete
+    strtok(paramsBak, " ");  // ignore the command
+    pch = strtok(NULL, " "); // Get the name to delete
 
     Device::deleteFromConfig(pch);
 
@@ -489,39 +547,49 @@ bool deleteFromConfig(const char* params) {
 }
 
 // Interrupt function
-void pollDevice(Device* d) {
-    if (FLAG_IS_ENABLED(FLAG_POLLING)) d->pollMePlease();
+void pollDevice(Device *d)
+{
+    if (FLAG_IS_ENABLED(FLAG_POLLING))
+        d->pollMePlease();
 }
 
-
 #if WIFI_ENABLED
-bool resetWifiConfigCallback(const char* params) {
+bool resetWifiConfigCallback(const char *params)
+{
     return resetWifiConfig();
 }
 
-static bool getWifiConfigArgument(const char*& cursor, String& argument) {
-    while (*cursor == ' ' || *cursor == '\t') cursor++;
-    if (*cursor == '\0') return false;
+static bool getWifiConfigArgument(const char *&cursor, String &argument)
+{
+    while (*cursor == ' ' || *cursor == '\t')
+        cursor++;
+    if (*cursor == '\0')
+        return false;
 
     argument = "";
-    if (*cursor == '"') {
+    if (*cursor == '"')
+    {
         cursor++;
-        while (*cursor != '\0' && *cursor != '"') {
+        while (*cursor != '\0' && *cursor != '"')
+        {
             argument += *cursor++;
         }
-        if (*cursor != '"') return false;
+        if (*cursor != '"')
+            return false;
         cursor++;
         return *cursor == '\0' || *cursor == ' ' || *cursor == '\t';
     }
 
-    while (*cursor != '\0' && *cursor != ' ' && *cursor != '\t') {
+    while (*cursor != '\0' && *cursor != ' ' && *cursor != '\t')
+    {
         argument += *cursor++;
     }
     return true;
 }
 
-bool wifiConfig(const char* params) {
-    const char* cursor = params;
+bool wifiConfig(const char *params)
+{
+    const char *cursor = params;
     String command;
     String ssid;
     String psk;
@@ -530,7 +598,8 @@ bool wifiConfig(const char* params) {
     if (!getWifiConfigArgument(cursor, command) ||
         !getWifiConfigArgument(cursor, ssid) ||
         !getWifiConfigArgument(cursor, psk) ||
-        getWifiConfigArgument(cursor, extra)) {
+        getWifiConfigArgument(cursor, extra))
+    {
         LOG.println("Usage: wifiConfig \"ssid\" \"psk\"");
         return false;
     }
@@ -539,18 +608,23 @@ bool wifiConfig(const char* params) {
     return true;
 }
 
-bool wifiReconnect(const char* params) {
+bool wifiReconnect(const char *params)
+{
     reconnectWifi();
     return true;
 }
 
-bool wifiDiag(const char* params) {
+bool wifiDiag(const char *params)
+{
     WiFi.printDiag(LOG);
 
     LOG.print("Yokis-Hack IP: ");
-    if (WiFi.getMode() == WIFI_AP) {
+    if (WiFi.getMode() == WIFI_AP)
+    {
         LOG.println(WiFi.softAPIP());
-    } else {
+    }
+    else
+    {
         LOG.println(WiFi.localIP());
     }
 
@@ -558,14 +632,16 @@ bool wifiDiag(const char* params) {
 }
 #endif // WIFI_ENABLED
 
-bool restart(const char* params) {
+bool restart(const char *params)
+{
     ESP.restart();
     return true;
 }
 
 #if MQTT_ENABLED
-bool mqttConfig(const char* params) {
-    char* paramsBak;
+bool mqttConfig(const char *params)
+{
+    char *paramsBak;
     char *host, *sport, *username, *password;
     MqttConfig config;
 
@@ -573,25 +649,27 @@ bool mqttConfig(const char* params) {
     paramsBak = new char[len + 1];
     strncpy(paramsBak, params, len);
     paramsBak[len] = 0;
-    strtok(paramsBak, " ");    // Ignore the command name
-    host = strtok(NULL, " ");  // Get the host
-    if (host == NULL) {
+    strtok(paramsBak, " ");   // Ignore the command name
+    host = strtok(NULL, " "); // Get the host
+    if (host == NULL)
+    {
         LOG.println("MQTT host cannot be null. Aborting.");
         return false;
     }
     config.setHost(host);
 
-    sport = strtok(NULL, " ");  // Get the port
-    if (sport == NULL || strlen(sport) == 0 || strlen(sport) > 5) {
+    sport = strtok(NULL, " "); // Get the port
+    if (sport == NULL || strlen(sport) == 0 || strlen(sport) > 5)
+    {
         LOG.println("MQTT port is null or too high. Aborting.");
         return false;
     }
     config.setPort((uint16_t)atol(sport));
 
-    username = strtok(NULL, " ");  // Get the username
+    username = strtok(NULL, " "); // Get the username
     config.setUsername(username);
 
-    password = strtok(NULL, " ");  // Get the password
+    password = strtok(NULL, " "); // Get the password
     config.setPassword(password);
 
     LOG.println("MQTT configuration:");
@@ -604,13 +682,15 @@ bool mqttConfig(const char* params) {
     return true;
 }
 
-bool mqttDiag(const char* params) {
+bool mqttDiag(const char *params)
+{
     LOG.println("Current MQTT configuration:");
     g_mqtt->printDebug(LOG);
     return true;
 }
 
-bool mqttConfigDelete(const char*) {
+bool mqttConfigDelete(const char *)
+{
     MqttConfig emptyConfig;
     MqttConfig::deleteConfigFromLittleFS();
     g_mqtt->setConnectionInfo(emptyConfig);

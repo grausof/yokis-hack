@@ -7,14 +7,15 @@
 #include <FS.h>
 #endif
 
-Device::Device(const char* dname) {
+Device::Device(const char *dname)
+{
     this->name = NULL;
     this->setName(dname);
     this->hardwareAddress =
-        (uint8_t*)malloc(HARDWARE_ADDRESS_LENGTH * sizeof(uint8_t));
+        (uint8_t *)malloc(HARDWARE_ADDRESS_LENGTH * sizeof(uint8_t));
     memset(this->serial, 0, 2 * sizeof(uint8_t));
     memset(this->version, 0, 3 * sizeof(uint8_t));
-    this->setMode(ON_OFF);  // most used devices AFAIK
+    this->setMode(ON_OFF); // most used devices AFAIK
     this->setStatus(UNDEFINED);
     this->setAvailability(ONLINE);
     this->setBrightness(BRIGHTNESS_OFF);
@@ -23,39 +24,44 @@ Device::Device(const char* dname) {
     this->hasToBePolledForStatus = false;
 }
 
-Device::Device(const Device* device) : Device(device->name) {
+Device::Device(const Device *device) : Device(device->name)
+{
     this->copy(device);
 }
 
-Device::Device(const char* dname, const uint8_t* hwAddr, uint8_t channel)
-    : Device(dname) {
+Device::Device(const char *dname, const uint8_t *hwAddr, uint8_t channel)
+    : Device(dname)
+{
     this->setHardwareAddress(hwAddr);
     this->setChannel(channel);
 }
 
-Device::Device(const char* dname, const uint8_t* hwAddr, uint8_t channel,
-               const uint8_t* serial, const uint8_t* version)
-    : Device(dname, hwAddr, channel) {
+Device::Device(const char *dname, const uint8_t *hwAddr, uint8_t channel,
+               const uint8_t *serial, const uint8_t *version)
+    : Device(dname, hwAddr, channel)
+{
     this->setSerial(serial);
     this->setVersion(version);
 }
 
-Device::~Device() {
+Device::~Device()
+{
     free(this->name);
     free(this->hardwareAddress);
 }
 
-const char* Device::getName() const { return this->name; }
+const char *Device::getName() const { return this->name; }
 
-const uint8_t* Device::getHardwareAddress() const {
+const uint8_t *Device::getHardwareAddress() const
+{
     return this->hardwareAddress;
 }
 
 uint8_t Device::getChannel() const { return this->channel; }
 
-const uint8_t* Device::getVersion() const { return this->version; }
+const uint8_t *Device::getVersion() const { return this->version; }
 
-const uint8_t* Device::getSerial() const { return this->serial; }
+const uint8_t *Device::getSerial() const { return this->serial; }
 
 const DeviceMode Device::getMode() const { return mode; }
 
@@ -65,81 +71,98 @@ const DimmerBrightness Device::getBrightness() const { return brightness; }
 
 const DimmerEffect Device::getDimmerEffect() const { return dimmerEffect; }
 
-const DeviceAvailability Device::getAvailability() const {
+const DeviceAvailability Device::getAvailability() const
+{
     return availability;
 }
 
-const unsigned long Device::getLastUpdateMillis() const {
+const unsigned long Device::getLastUpdateMillis() const
+{
     return lastUpdateMillis;
 }
 
 bool Device::needsPolling() { return hasToBePolledForStatus; }
 
 // static
-const char* Device::getStatusAsString(DeviceStatus status) {
-    switch (status) {
-        case ON:
-            return "ON";
-        case OFF:
-            return "OFF";
-        case UNDEFINED:
-            return "UNDEFINED";
-        case PAUSE_SHUTTER:
-            return "PAUSE_SHUTTER";
+const char *Device::getStatusAsString(DeviceStatus status)
+{
+    switch (status)
+    {
+    case ON:
+        return "ON";
+    case OFF:
+        return "OFF";
+    case UNDEFINED:
+        return "UNDEFINED";
+    case PAUSE_SHUTTER:
+        return "PAUSE_SHUTTER";
+    case SHUTTER_OPENING:
+        return "SHUTTER_OPENING";
+    case SHUTTER_CLOSING:
+        return "SHUTTER_CLOSING";
     }
 
     return NULL;
 }
 
 // static
-const char* Device::getModeAsString(DeviceMode mode) {
-    switch (mode) {
-        case DIMMER:
-            return "DIMMER";
-        case ON_OFF:
-            return "ON_OFF";
-        case SHUTTER:
-           return "SHUTTER";
-        case SHUTTER_BUS:
-           return "SHUTTER_BUS";
-        case NO_RCPT:
-            return "NO_RCP";
+const char *Device::getModeAsString(DeviceMode mode)
+{
+    switch (mode)
+    {
+    case DIMMER:
+        return "DIMMER";
+    case ON_OFF:
+        return "ON_OFF";
+    case SHUTTER:
+        return "SHUTTER";
+    case SHUTTER_BUS:
+        return "SHUTTER_BUS";
+    case NO_RCPT:
+        return "NO_RCP";
     }
 
     return NULL;
 }
 
 // static
-const char* Device::getAvailabilityAsString(DeviceAvailability availability) {
-    switch (availability) {
-        case ONLINE:
-            return "Online";
-        case OFFLINE:
-            return "Offline";
+const char *Device::getAvailabilityAsString(DeviceAvailability availability)
+{
+    switch (availability)
+    {
+    case ONLINE:
+        return "Online";
+    case OFFLINE:
+        return "Offline";
     }
 
     return NULL;
 }
 
-void Device::setName(const char* dname) {
-    if (dname != NULL) {
-        this->name = (char*)realloc(this->name, strlen(dname) + 1);
+void Device::setName(const char *dname)
+{
+    if (dname != NULL)
+    {
+        this->name = (char *)realloc(this->name, strlen(dname) + 1);
         strcpy(this->name, dname);
     }
 }
 
-void Device::setHardwareAddress(const uint8_t* hwAddr) {
-    if (hwAddr != NULL) {
+void Device::setHardwareAddress(const uint8_t *hwAddr)
+{
+    if (hwAddr != NULL)
+    {
         memcpy(this->hardwareAddress, hwAddr,
                HARDWARE_ADDRESS_LENGTH * sizeof(uint8_t));
     }
 }
 
-void Device::setHardwareAddress(const char* hw) {
+void Device::setHardwareAddress(const char *hw)
+{
     uint8_t b1, b2;
     char buf[3];
 
-    buf[2] = 0;  // null terminate in advance
+    buf[2] = 0; // null terminate in advance
 
     strncpy(buf, hw, 2);
     b1 = (uint8_t)strtoul(buf, NULL, 16);
@@ -155,35 +178,51 @@ void Device::setHardwareAddress(const char* hw) {
 
 void Device::setChannel(uint8_t channel) { this->channel = channel; }
 
-void Device::setVersion(const uint8_t* version) {
+void Device::setVersion(const uint8_t *version)
+{
     memcpy(this->version, version, 3 * sizeof(uint8_t));
 }
 
-void Device::setSerial(const uint8_t* serial) {
+void Device::setSerial(const uint8_t *serial)
+{
     memcpy(this->serial, serial, 2 * sizeof(uint8_t));
 }
 
 void Device::setMode(DeviceMode mode) { this->mode = mode; }
 
-void Device::setMode(const char* mode) {
-    if (mode == NULL || strlen(mode) == 0) {
+void Device::setMode(const char *mode)
+{
+    if (mode == NULL || strlen(mode) == 0)
+    {
         this->setMode(ON_OFF);
-    } else if (strcmp("DIMMER", mode) == 0) {
+    }
+    else if (strcmp("DIMMER", mode) == 0)
+    {
         this->setMode(DIMMER);
-    } else if (strcmp("SHUTTER", mode) == 0) {
+    }
+    else if (strcmp("SHUTTER", mode) == 0)
+    {
         this->setMode(SHUTTER);
-    } else if (strcmp("SHUTTER_BUS", mode) ==0) {
+    }
+    else if (strcmp("SHUTTER_BUS", mode) == 0)
+    {
         this->setMode(SHUTTER_BUS);
-    } else if (strcmp("NO_RCPT", mode) == 0) {
+    }
+    else if (strcmp("NO_RCPT", mode) == 0)
+    {
         this->setMode(NO_RCPT);
-    } else {
+    }
+    else
+    {
         this->setMode(ON_OFF);
     }
 }
 
-void Device::setStatus(DeviceStatus status) {
+void Device::setStatus(DeviceStatus status)
+{
     this->status = status;
-    if (this->status == OFF) {
+    if (this->status == OFF)
+    {
         this->setBrightness(BRIGHTNESS_OFF);
         this->setDimmerEffect(EFFECT_NONE);
     }
@@ -191,21 +230,25 @@ void Device::setStatus(DeviceStatus status) {
     this->lastUpdateMillis = millis();
 }
 
-void Device::setBrightness(DimmerBrightness brightness) {
+void Device::setBrightness(DimmerBrightness brightness)
+{
     this->brightness = brightness;
     this->lastUpdateMillis = millis();
 }
 
-void Device::setDimmerEffect(DimmerEffect effect) {
+void Device::setDimmerEffect(DimmerEffect effect)
+{
     this->dimmerEffect = effect;
 }
 
-void Device::setAvailability(DeviceAvailability availability) {
+void Device::setAvailability(DeviceAvailability availability)
+{
     this->availability = availability;
 }
 
 void Device::online() { this->setAvailability(ONLINE); }
-void Device::offline() {
+void Device::offline()
+{
     this->setAvailability(OFFLINE);
     this->setStatus(UNDEFINED);
 }
@@ -214,39 +257,51 @@ bool Device::isOffline() { return this->availability == OFFLINE; }
 
 void Device::pollMePlease() { this->hasToBePolledForStatus = true; }
 
-void Device::pollingSuccess() {
+void Device::pollingSuccess()
+{
     this->hasToBePolledForStatus = false;
     this->failedPolls = 0;
 }
 
-uint8_t Device::pollingFailed() {
+uint8_t Device::pollingFailed()
+{
     this->hasToBePolledForStatus = false;
     return ++failedPolls;
 }
 
-uint8_t Device::getFailedPollings() {
+uint8_t Device::getFailedPollings()
+{
     return this->failedPolls;
 }
 
-void Device::toggleStatus() {
-    switch (status) {
-        case UNDEFINED:
-            setStatus(UNDEFINED);
-            break;
-        case PAUSE_SHUTTER:
-            setStatus(PAUSE_SHUTTER);
-            break;
-        case OFF:
-            setStatus(ON);
-            break;
-        case ON:
-            setStatus(OFF);
-            setBrightness(BRIGHTNESS_OFF);
-            break;
+void Device::toggleStatus()
+{
+    switch (status)
+    {
+    case UNDEFINED:
+        setStatus(UNDEFINED);
+        break;
+    case PAUSE_SHUTTER:
+        setStatus(PAUSE_SHUTTER);
+        break;
+    case SHUTTER_OPENING:
+        setStatus(SHUTTER_CLOSING);
+        break;
+    case SHUTTER_CLOSING:
+        setStatus(SHUTTER_OPENING);
+        break;
+    case OFF:
+        setStatus(ON);
+        break;
+    case ON:
+        setStatus(OFF);
+        setBrightness(BRIGHTNESS_OFF);
+        break;
     }
 }
 
-void Device::toSerial() {
+void Device::toSerial()
+{
     LOG.print(name);
     LOG.print(" - status=");
     LOG.println(Device::getStatusAsString(status));
@@ -273,7 +328,8 @@ void Device::toSerial() {
 }
 
 // Copy all fields from given device to this device
-void Device::copy(const Device* d) {
+void Device::copy(const Device *d)
+{
     this->setName(d->getName());
     this->setHardwareAddress(d->getHardwareAddress());
     this->setChannel(d->getChannel());
@@ -292,13 +348,16 @@ void Device::copy(const Device* d) {
 // size is the size of the list given
 // deviceName is the name of the device to look for
 // returns a pointer to the corresponding device if found, NULL otherwise
-Device* Device::getFromList(Device** devices, size_t size,
-                            const char* deviceName) {
-    Device* d = NULL;
+Device *Device::getFromList(Device **devices, size_t size,
+                            const char *deviceName)
+{
+    Device *d = NULL;
 
-    for (unsigned int i = 0; i < size; i++) {
+    for (unsigned int i = 0; i < size; i++)
+    {
         if (devices[i] != NULL &&
-            strcmp(devices[i]->getName(), deviceName) == 0) {
+            strcmp(devices[i]->getName(), deviceName) == 0)
+        {
             d = devices[i];
             break;
         }
@@ -310,13 +369,15 @@ Device* Device::getFromList(Device** devices, size_t size,
 #if defined(ESP8266) || defined(ESP32)
 
 // Static - Store a raw configuration line into LittleFS
-bool Device::storeRawConfig(const char* line) {
+bool Device::storeRawConfig(const char *line)
+{
     bool ret = true;
 
     YokisLittleFS::init();
 
     File f = LittleFS.open(LITTLEFS_CONFIG_FILENAME, "a+");
-    if (!f) {
+    if (!f)
+    {
         LOG.print(LITTLEFS_CONFIG_FILENAME);
         LOG.println(" - file open failed");
         return false;
@@ -325,7 +386,8 @@ bool Device::storeRawConfig(const char* line) {
     char buf[128];
     sprintf(buf, "%s", line);
     int bytesWritten = f.println(buf);
-    if (bytesWritten <= 0) {
+    if (bytesWritten <= 0)
+    {
         LOG.print(LITTLEFS_CONFIG_FILENAME);
         LOG.println(" - cannot write to file");
         ret = false;
@@ -335,7 +397,8 @@ bool Device::storeRawConfig(const char* line) {
     return ret;
 }
 
-bool Device::saveToLittleFS() {
+bool Device::saveToLittleFS()
+{
     bool ret = true;
 
     YokisLittleFS::init();
@@ -346,7 +409,8 @@ bool Device::saveToLittleFS() {
     Device::deleteLineInConfig(line);
 
     File f = LittleFS.open(LITTLEFS_CONFIG_FILENAME, "a+");
-    if (!f) {
+    if (!f)
+    {
         LOG.print(LITTLEFS_CONFIG_FILENAME);
         LOG.println(" - file open failed");
         return false;
@@ -358,7 +422,8 @@ bool Device::saveToLittleFS() {
             SEP, 0, SEP, 0, SEP, version[0], version[1],
             version[2], SEP, serial[0], serial[1], SEP, mode);
     int bytesWritten = f.println(buf);
-    if (bytesWritten <= 0) {
+    if (bytesWritten <= 0)
+    {
         LOG.print(LITTLEFS_CONFIG_FILENAME);
         LOG.println(" - cannot write to file");
         ret = false;
@@ -369,24 +434,28 @@ bool Device::saveToLittleFS() {
 }
 
 // Static - delete a device from LittleFS configuration
-void Device::deleteFromConfig(const char* deviceName) {
+void Device::deleteFromConfig(const char *deviceName)
+{
     int line = Device::findInConfig(deviceName);
-    if (line != -1) Device::deleteLineInConfig(line);
+    if (line != -1)
+        Device::deleteLineInConfig(line);
 }
 
 // Static - load devices previously stored in the LittleFS memory area
-int Device::loadFromLittleFS(Device** devices, const unsigned int size) {
+int Device::loadFromLittleFS(Device **devices, const unsigned int size)
+{
     char buf[128];
-    char* tok;
+    char *tok;
     uint16_t numLines = 0;
-    Device* d = NULL;
+    Device *d = NULL;
     char uCharBuf[3];
     uint8_t uIntBuf[3];
 
     YokisLittleFS::init();
 
     File f = LittleFS.open(LITTLEFS_CONFIG_FILENAME, "r");
-    if (!f) {
+    if (!f)
+    {
         LOG.print(LITTLEFS_CONFIG_FILENAME);
         LOG.println(" - File open failed");
         return 0;
@@ -395,30 +464,33 @@ int Device::loadFromLittleFS(Device** devices, const unsigned int size) {
     // null terminate in advance
     uCharBuf[2] = 0;
 
-    while (f.available()) {
-        if (numLines >= size) break;
+    while (f.available())
+    {
+        if (numLines >= size)
+            break;
 
         int l = f.readBytesUntil('\n', buf, sizeof(buf) - 1);
         buf[l] = 0;
 
-        tok = strtok(buf, SEP);  // device name
+        tok = strtok(buf, SEP); // device name
         d = new Device(tok);
 
         tok = strtok(NULL,
-                     SEP);  // hw address as two bytes represented as 4 chars
+                     SEP); // hw address as two bytes represented as 4 chars
         d->setHardwareAddress(tok);
 
-        tok = strtok(NULL, SEP);  // channel represented as 2 chars
+        tok = strtok(NULL, SEP); // channel represented as 2 chars
         d->setChannel((uint8_t)strtoul(tok, NULL, 16));
 
-        tok = strtok(NULL, SEP);  // begin packet represented as 2 chars - not used anymore
-        //d->setBeginPacket((uint8_t)strtoul(tok, NULL, 16));
+        tok = strtok(NULL, SEP); // begin packet represented as 2 chars - not used anymore
+        // d->setBeginPacket((uint8_t)strtoul(tok, NULL, 16));
 
-        tok = strtok(NULL, SEP);  // end packet represented as 2 chars - not used anymore
-        //d->setEndPacket((uint8_t)strtoul(tok, NULL, 16));
+        tok = strtok(NULL, SEP); // end packet represented as 2 chars - not used anymore
+        // d->setEndPacket((uint8_t)strtoul(tok, NULL, 16));
 
-        tok = strtok(NULL, SEP);  // version represented as 6 chars
-        if (tok != NULL) {
+        tok = strtok(NULL, SEP); // version represented as 6 chars
+        if (tok != NULL)
+        {
             strncpy(uCharBuf, tok, 2);
             uIntBuf[0] = (uint8_t)strtoul(uCharBuf, NULL, 16);
             strncpy(uCharBuf, tok + 2, 2);
@@ -429,8 +501,9 @@ int Device::loadFromLittleFS(Device** devices, const unsigned int size) {
             d->setVersion(uIntBuf);
         }
 
-        tok = strtok(NULL, SEP);  // Serial represented as 4 chars
-        if (tok != NULL) {
+        tok = strtok(NULL, SEP); // Serial represented as 4 chars
+        if (tok != NULL)
+        {
             strncpy(uCharBuf, tok, 2);
             uIntBuf[0] = (uint8_t)strtoul(uCharBuf, NULL, 16);
             strncpy(uCharBuf, tok + 2, 2);
@@ -439,8 +512,9 @@ int Device::loadFromLittleFS(Device** devices, const unsigned int size) {
             d->setSerial(uIntBuf);
         }
 
-        tok = strtok(NULL, SEP);  // Mode represented as 4 chars
-        if (tok != NULL) {
+        tok = strtok(NULL, SEP); // Mode represented as 4 chars
+        if (tok != NULL)
+        {
             d->setMode((DeviceMode)strtoul(tok, NULL, 16));
         }
 
@@ -455,44 +529,53 @@ int Device::loadFromLittleFS(Device** devices, const unsigned int size) {
 }
 
 // static - display config file from LittleFS
-void Device::displayConfigFromLittleFS() {
+void Device::displayConfigFromLittleFS()
+{
     YokisLittleFS::init();
     File f = LittleFS.open(LITTLEFS_CONFIG_FILENAME, "r");
     LOG.println("LittleFS configuration stored:");
-    while (f.available()) {
+    while (f.available())
+    {
         LOG.write(f.read());
     }
     f.close();
 }
 
 // static
-void Device::clearConfigFromLittleFS() {
+void Device::clearConfigFromLittleFS()
+{
     YokisLittleFS::init();
     File f = LittleFS.open(LITTLEFS_CONFIG_FILENAME, "w");
-    if (f) f.close();
+    if (f)
+        f.close();
 }
 
 // static
-int Device::findInConfig(const char* deviceName) {
-    if (deviceName == NULL) return -1;
+int Device::findInConfig(const char *deviceName)
+{
+    if (deviceName == NULL)
+        return -1;
 
     YokisLittleFS::init();
     int currentLine = 1;
     char buf[128];
-    char* tok;
+    char *tok;
     int found = -1;
 
     File f = LittleFS.open(LITTLEFS_CONFIG_FILENAME, "r");
-    if (!f) {
+    if (!f)
+    {
         LOG.println("File open failed");
         return -1;
     }
 
-    while (f.available()) {
+    while (f.available())
+    {
         int l = f.readBytesUntil('\n', buf, sizeof(buf) - 1);
         buf[l] = 0; // terminate string with a null char
         tok = strtok(buf, SEP);
-        if (tok != NULL && strcmp(tok, deviceName) == 0) {
+        if (tok != NULL && strcmp(tok, deviceName) == 0)
+        {
             found = currentLine;
             break;
         }
@@ -505,8 +588,10 @@ int Device::findInConfig(const char* deviceName) {
 }
 
 // static
-void Device::deleteLineInConfig(int line) {
-    if(line <= 0) {
+void Device::deleteLineInConfig(int line)
+{
+    if (line <= 0)
+    {
         return;
     }
 
@@ -516,24 +601,29 @@ void Device::deleteLineInConfig(int line) {
     int currentLine = 1;
 
     File f = LittleFS.open(LITTLEFS_CONFIG_FILENAME, "r");
-    if (!f) {
+    if (!f)
+    {
         LOG.print(LITTLEFS_CONFIG_FILENAME);
         LOG.println(" - File open failed");
         return;
     }
     File fbak = LittleFS.open(LITTLEFS_CONFIG_BAK_FILENAME, "w");
-    if (!fbak) {
+    if (!fbak)
+    {
         LOG.print(LITTLEFS_CONFIG_BAK_FILENAME);
         LOG.println(" - File open failed");
         return;
     }
 
-    while (f.available()) {
+    while (f.available())
+    {
         int l = f.readBytesUntil('\n', buf, sizeof(buf) - 1);
         buf[l] = 0;
-        if (currentLine++ != line) {
+        if (currentLine++ != line)
+        {
             int bytesWritten = fbak.println(buf);
-            if (bytesWritten <= 0) {
+            if (bytesWritten <= 0)
+            {
                 LOG.println("Cannot write to backup configuration file");
             }
         }

@@ -17,28 +17,29 @@
 
 #define HASS_PREFIX "homeassistant"
 
-class MqttHass : public Mqtt {
-   protected:
-    char* newMessageJson(const Device*, char*);
-    char* newPublishTopic(const Device*, char*);
+class MqttHass : public Mqtt
+{
+protected:
+    char *newMessageJson(const Device *, char *);
+    char *newPublishTopic(const Device *, char *);
     bool discoveryDone = false;
 
-   public:
-    MqttHass(WiFiClient&);
-    MqttHass(WiFiClient&, const char*, const uint16_t, const char*, const char*);
+public:
+    MqttHass(WiFiClient &);
+    MqttHass(WiFiClient &, const char *, const uint16_t, const char *, const char *);
     bool isDiscoveryDone();
     void setDiscoveryDone(bool);
-    void cleanupOldDiscovery(const Device*);
-    bool publishDevice(const Device*);
-    void subscribeDevice(const Device*);
-    void notifyAvailability(const Device*, const char*);
-    void notifyOnline(const Device*);
-    void notifyOffline(const Device*);
-    void notifyPower(const Device*);
-    void notifyPower(const Device*, DeviceStatus);
-    void notifyCover(const Device*);
-    void notifyBrightness(const Device* device);
+    void cleanupOldDiscovery(const Device *);
+    bool publishDevice(const Device *);
+    void subscribeDevice(const Device *);
+    void notifyAvailability(const Device *, const char *);
+    void notifyOnline(const Device *);
+    void notifyOffline(const Device *);
+    void notifyPower(const Device *);
+    void notifyPower(const Device *, DeviceStatus);
+    void notifyCover(const Device *);
+    void notifyBrightness(const Device *device);
 };
 
-#endif  // __MQTT_HASS_H__
-#endif  // ESP8266 || ESP32
+#endif // __MQTT_HASS_H__
+#endif // ESP8266 || ESP32
